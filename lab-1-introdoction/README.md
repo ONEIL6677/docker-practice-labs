@@ -142,6 +142,6 @@ docker build -t my-python-app . # -t is to tag the image or give it a name
 docker run -p 5000:5000 my-python-app # maping port 5000 in the container with port 5000 in the host computer
 ```
 
-# Author: ONEIL KIMBI
+## Author: ONEIL KIMBI
 ---
 ⭐ *If these 7 labs helped you understand Docker, please give this repository a star!*
