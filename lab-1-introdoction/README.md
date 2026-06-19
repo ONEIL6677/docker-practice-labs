@@ -13,24 +13,66 @@ That container runs the same way on any machine, solving the classic
 *"it works on my machine"* problem.
 ---
 
-## 1. The Docker Client
+## What about the Docker Engine?
+
+The **Docker Engine** is the entire core, client-server software suite. It is the complete package you download and install. It acts as an umbrella that contains three distinct layers working together:
+
+---
+
+## 1. The Core Components
+
+### A. The Docker Client
 The **Docker Client** (`docker`) is the primary user interface. It is the command-line tool or desktop application where you type instructions.
-
 * **Role:** Acts as the entry point for user interaction.
-* **Function:** The client **does not** create images or run containers. Instead, it accepts your commands, packages them into standardized API requests, and forwards them to the daemon.
----
+* **Function:** The client **does not** create images or run containers. It simply accepts your commands, packages them into standardized API requests, and forwards them down the chain.
 
-## 2. The Docker Daemon
+### B. The Docker Daemon
 The **Docker Daemon** (`dockerd`) is a persistent background service that runs on your host operating system.
+* **Role:** Acts as the smart "middle manager" of the Docker Engine.
+* **Function:** It listens for incoming requests from the Docker Client. It handles high-level logistics: authenticating users, building images from Dockerfiles, managing complex networks, and structuring data volumes.
 
-* **Role:** Acts as the brain and engine of your Docker environment.
-* **Function:** It listens for incoming requests from the Docker Client. It is entirely responsible for the heavy lifting: building images, spinning up containers, managing local networks, and attaching storage volumes.
+### C. Containerd (The Container Runtime)
+Deep inside the Docker Engine sits **containerd**, a specialized, CNCF-graduated container runtime process. 
+* **Role:** Acts as the low-level "worker" that actually executes the containers.
+* **Function:** When the Daemon receives a command to run a container, it hands the task off to containerd. Containerd manages the entire lifecycle of the container: creating namespaces for isolation, setting up control groups (cgroups) for resource limits, and supervising the running process.
+
 ---
 
-## Overview
+## 2. How They Communicate
 
-Docker operates on a **client-server architecture**. Instead of a single monolithic program, the work is split between the tool you interact with (the Client) and the background engine that executes the commands (the Daemon).
+The components pass messages down the line using two highly efficient communication protocols:
+
+1. **Client to Daemon (REST API):** The Docker Client communicates with the Daemon using standard HTTP REST API calls. This travels via local **UNIX Sockets** (`/var/run/docker.sock`) by default, but can use **TCP Sockets** for remote cloud servers.
+2. **Daemon to Containerd (gRPC):** The Daemon communicates with containerd using **gRPC** (Google Remote Procedure Call), an ultra-fast, high-performance protocol designed for internal microservices.
+
 ---
+
+## Lifecycle Example: Running a Container
+
+When you type a command into your terminal, it triggers the following sequence of events:
+---
+1. **Input:** You execute `docker run my-app` in your terminal.
+2. **Translation:** The **Docker Client** translates this into an HTTP REST API request.
+3. **Logistics:** The **Docker Daemon** receives the request via the UNIX socket, verifies that the `my-app` image exists, and prepares the network configuration.
+4. **Execution:** The Daemon sends a swift gRPC request to **containerd**, saying *"Launch this container process now."*
+5. **Output:** Containerd interfaces with the host Linux/Windows kernel to create an isolated container environment and executes your application.
+
+---
+
+## Verifying the Architecture
+
+You can see these distinct layers on your machine by running:
+
+```bash
+docker version
+```
+
+The output will separate the **Client** details from the **Server** engine details. 
+
+If you are on a Linux machine, you can also view both background processes running independently using your system monitor:
+```bash
+ps aux | grep -E "dockerd|containerd"
+```
 ## Containers vs Virtual Machines
 
 | | Virtual Machines | Containers |
