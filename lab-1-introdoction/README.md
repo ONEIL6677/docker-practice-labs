@@ -116,32 +116,41 @@ docker exec -it <container_id> /bin/bash   # open a shell inside it
 
 ---
 
-## Simple Dockerfile Example
+## Simple Docker project Example
+---
+### Step 1: Create the Project Files
+Create a new directory on your computer and place two files inside it: *app.py* and *Dockerfile*.
+---
+## Step 2: The Application *(app.py)*
+This is the simple Python script that our container will execute.
 
-```dockerfile
-# 1. Download the official, lightweight Python 3.11 base operating system image
-FROM python:3.11-slim
-# 2. Create and switch to a folder named '/app' inside the container for all next steps
-WORKDIR /app
-# 3. Copy only the dependency list from your local computer into the container's current folder
-COPY requirements.txt .
-# 4. Run the pip tool inside the container to install all listed software packages
-RUN pip install -r requirements.txt
-# 5. Copy all the remaining source code files from your local computer into the container
-COPY . .
-# 6. Inform Docker that the application inside the container listens on network port 5000
-EXPOSE 5000
-# 7. Define the default command to run your app automatically when the container starts up
-CMD ["python", "app.py"]
+```bash
+print("Hello, World! Your first Docker container works perfectly.")
 
 ```
+## Step 3 : Dockerfile
 
-## Run this command in the terminal
+```dockerfile
+# Step 1: Use an official, minimal Python runtime as our base operating system
+FROM python:3.11-slim
+
+# Step 2: Set the internal working directory inside the container to /app
+WORKDIR /app
+
+# Step 3: Copy the app.py file from your local machine into the container
+COPY app.py .
+
+# Step 4: Tell Docker to run the Python script when the container launches
+CMD ["python", "app.py"]
+```
+---
+## Step 4: Run this command in the terminal
 ```bash
 docker build -t my-python-app . # -t is to tag the image or give it a name
 docker run -p 5000:5000 my-python-app # maping port 5000 in the container with port 5000 in the host computer
 ```
-
+### The container prints the "Hello, World!" message directly to your terminal screen and gracefully shuts down immediately afterward since its task is complete.
+---
 ## Author: ONEIL KIMBI
 ---
 ⭐ *If these 7 labs helped you understand Docker, please give this repository a star!*
