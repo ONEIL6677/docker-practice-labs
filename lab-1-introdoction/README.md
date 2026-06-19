@@ -13,7 +13,7 @@ That container runs the same way on any machine, solving the classic
 *"it works on my machine"* problem.
 ---
 
-## What about the Docker Engine?
+## Docker Engine
 
 The **Docker Engine** is the entire core, client-server software suite. It is the complete package you download and install. It acts as an umbrella that contains three distinct layers working together:
 
@@ -142,6 +142,6 @@ docker build -t my-python-app . # -t is to tag the image or give it a name
 docker run -p 5000:5000 my-python-app # maping port 5000 in the container with port 5000 in the host computer
 ```
 
-
+# Author: ONEIL KIMBI
 ---
 ⭐ *If these 7 labs helped you understand Docker, please give this repository a star!*
