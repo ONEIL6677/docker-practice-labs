@@ -1,4 +1,4 @@
-# 🐳 Introduction to Docker
+# Introduction to Docker
 
 A quick guide to what Docker is and how it works.
 
