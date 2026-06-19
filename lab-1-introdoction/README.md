@@ -27,20 +27,9 @@ The **Docker Daemon** (`dockerd`) is a persistent background service that runs o
 * **Function:** It listens for incoming requests from the Docker Client. It is entirely responsible for the heavy lifting: building images, spinning up containers, managing local networks, and attaching storage volumes.
 ---
 
-## Architecture Overview
+## Overview
 
 Docker operates on a **client-server architecture**. Instead of a single monolithic program, the work is split between the tool you interact with (the Client) and the background engine that executes the commands (the Daemon).
----
-
-## What is Docker Image?
-
-A Docker image is a frozen, read-only blueprint template used to create a container.
-
----
-## What is Docker container?
-
-A live, running instance of an isolated, lightweight package that contains an application and everything it needs to run
-
 ---
 ## Containers vs Virtual Machines
 
@@ -63,7 +52,7 @@ A live, running instance of an isolated, lightweight package that contains an ap
 
 ---
 
-## How It Works
+## How It Works (Docker architecture)
 
 ```
 Dockerfile → docker build → Image → docker run → Container
