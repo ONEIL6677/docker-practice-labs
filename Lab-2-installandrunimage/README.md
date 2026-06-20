@@ -94,7 +94,14 @@ sudo apt update
 ```bash
 sudo apt install -y docker-buildx-plugin
 ```
-### Docker is Installed, up and running 🥳🥳
+Verify the plugin's presence by running:
+```bash
+docker buildx version
+```
+#### This will print your active version profile, and your subsequent docker build executions will automatically use the modern engine without throwing legacy builder deprecation alerts.
+```
+```
+### Docker is Installed, up and running
 
 Use the same command again, to verify that docker is up and running.
 
@@ -105,14 +112,8 @@ docker run hello-world
 Output should look like:
 
 ```
-....
-....
 Hello from Docker!
 This message shows that your installation appears to be working correctly.
-...
-...
 ```
-
-
 ## Great Job, Now start with the examples folder to write your first Dockerfile and move to the next examples. Happy Learning
 
