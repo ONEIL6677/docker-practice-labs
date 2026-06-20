@@ -94,8 +94,18 @@ Hello World
 
 ### Push the Image to DockerHub and share it with the world
 
+Docker Hub requires your image name to match a specific format: username/repository:tag. Create a copy of your local image with this exact name structure
+
+```text
+docker tag local-image-name:version DOCKERHUB-username/repository:tag
+
+ EXAMPLE
+docker tag my-first-docker-image oneil6677/my-first-docker-image:v1
+
+if you type docker images you should see oneil6677/my-first-docker-image:v1 ready to push
+```
 ```bash
-docker push oneil6677/my-first-docker-image
+docker push oneil6677/my-first-docker-image:v1
 ```
 ---
 Output
