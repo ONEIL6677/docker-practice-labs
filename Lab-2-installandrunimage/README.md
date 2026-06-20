@@ -40,13 +40,13 @@ This can mean two things,
 
 You use the below command to verify if the docker daemon is actually started and Active
 
-```
+```bash
 sudo systemctl status docker
 ```
 
 If you notice that the docker daemon is not running, you can start the daemon using the below command
 
-```
+```bash
 sudo systemctl start docker
 ```
 
@@ -55,7 +55,7 @@ sudo systemctl start docker
 
 To grant access to your user to run the docker command, you should add the user to the Docker Linux group. Docker group is create by default when docker is installed.
 
-```
+``` bash
 sudo usermod -aG docker ubuntu
 ```
 
@@ -63,12 +63,42 @@ In the above command `ubuntu` is the name of the user, you can change the userna
 
 **NOTE:** : You need to logout and login back for the changes to be reflected.
 
-
+## The next steps are neccesary to avoid debricated warning on WSL You can skip it you are on VM
+```
+Prepare your system to accept secure packages over HTTPS
+```
+```bash
+sudo apt install -y ca-certificates curl gnupg
+```
+Download Docker’s official cryptographic key so your system can safely verify the authenticity of the packages
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+```
+```bash
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+```
+```bash
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+```
+Inject the official Docker repository into your system's package source list
+```bash
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+Refresh your package catalog and successfully install the plugin
+```bash
+sudo apt update
+```
+```bash
+sudo apt install -y docker-buildx-plugin
+```
 ### Docker is Installed, up and running 🥳🥳
 
 Use the same command again, to verify that docker is up and running.
 
-```
+```bash
 docker run hello-world
 ```
 

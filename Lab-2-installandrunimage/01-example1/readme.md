@@ -2,13 +2,15 @@
 
 ```bash
 git clone https://github.com/ONEIL6677/docker-practice-labs
+```
 
+```bash
 cd  /docker-practice-labs/lab-2-ontainers/01-example1
 ```
 
 ### Login to Docker [Create an account with https://hub.docker.com/]
 
-```
+```bash
 docker login
 ```
 
@@ -29,10 +31,10 @@ Login Succeeded
 
 You need to change the username accordingly in the below command
 
+```bash
+docker build -t my-first-docker-image:latest .
 ```
-docker build -t oneil6677/my-first-docker-image:latest .
-```
-
+---
 Output of the above command
 
 ```
@@ -65,10 +67,10 @@ Output of the above command
 
 ### Verify Docker Image is created
 
-```
+```bash
 docker images
 ```
-
+---
 Output 
 
 ```
@@ -80,10 +82,10 @@ hello-world                        latest    feb5d9fea6a5   16 months ago    13.
 
 ### Run your First Docker Container
 
-```
+```bash
 docker run -it abhishekf5/my-first-docker-image
 ```
-
+---
 Output
 
 ```
@@ -92,10 +94,10 @@ Hello World
 
 ### Push the Image to DockerHub and share it with the world
 
-```
+```bash
 docker push abhishekf5/my-first-docker-image
 ```
-
+---
 Output
 
 ```
