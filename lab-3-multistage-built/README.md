@@ -3,15 +3,15 @@
 
 ## 1. The Core Concept
 
-Without multi-stage builds, your final image often contains everything used to *build* the app — compilers, source code, package managers, dev dependencies — even though none of that is needed to *run* it.
+Without multi-stage builds, your final image often contains everything used to *build* the app — compilers, source code, package managers, dev dependencies even though none of that is needed to *run* it.
 
-A multi-stage build lets you use multiple `FROM` statements in one Dockerfile. Each `FROM` starts a new, isolated **stage**. You can selectively copy only the files you need (like a compiled binary) from an earlier stage into a later, much smaller final stage — and Docker discards everything else.
+A multi-stage build lets you use multiple `FROM` statements in one Dockerfile. Each `FROM` starts a new, isolated **stage**. You can selectively copy only the files you need (like a compiled binary) from an earlier stage into a later, much smaller final stage and Docker discards everything else.
 
 **Why it matters:**
-- **Smaller images** — final image only has the runtime, not the whole toolchain.
-- **Smaller attack surface** — no compilers, source code, or secrets baked into the shipped image.
-- **One Dockerfile, no extra scripts** — no need for separate build scripts that build outside Docker and then `COPY` artifacts in.
-- **Faster pulls/deploys** — fewer layers, less data to transfer.
+- **Smaller images** final image only has the runtime, not the whole toolchain.
+- **Smaller attack surface** no compilers, source code, or secrets baked into the shipped image.
+- **One Dockerfile, no extra scripts** no need for separate build scripts that build outside Docker and then `COPY` artifacts in.
+- **Faster pulls/deploys** fewer layers, less data to transfer.
 
 ---
 
@@ -250,18 +250,18 @@ docker history <image>                         # inspect layers of the final ima
 
 ## 7. Common Pitfalls to Practice Spotting
 
-1. **Forgetting `--from=`** — a bare `COPY` always copies from the build context (your host), not from another stage. Leaving off `--from=builder` silently copies the wrong files or fails.
-2. **Copying too much** — copying an entire directory (`COPY --from=builder /src /app`) instead of just the binary defeats the purpose; final image bloats again.
-3. **Stage name typos** — referencing `--from=buidler` (typo) won't error clearly in older Docker versions in all cases; double check stage names match exactly.
-4. **Build cache invalidation** — putting `COPY . .` before installing dependencies (as in `npm install`) busts the cache on every source change. Copy dependency manifests first, install, *then* copy the rest of the source.
-5. **Assuming the last stage runs by default in CI** — if your pipeline uses `--target` for testing, make sure a separate, untargeted build step exists to produce the real shippable image.
+1. **Forgetting `--from=`** a bare `COPY` always copies from the build context (your host), not from another stage. Leaving off `--from=builder` silently copies the wrong files or fails.
+2. **Copying too much** copying an entire directory (`COPY --from=builder /src /app`) instead of just the binary defeats the purpose; final image bloats again.
+3. **Stage name typos** referencing `--from=buidler` (typo) won't error clearly in older Docker versions in all cases; double check stage names match exactly.
+4. **Build cache invalidation** putting `COPY . .` before installing dependencies (as in `npm install`) busts the cache on every source change. Copy dependency manifests first, install, *then* copy the rest of the source.
+5. **Assuming the last stage runs by default in CI** if your pipeline uses `--target` for testing, make sure a separate, untargeted build step exists to produce the real shippable image.
 
 ---
 
 ## 8. Suggested Practice Order
 
 1. Build `1-goapp-example/Dockerfile` and confirm the app runs.
-2. Build `Dockerfile.singlestage` and compare `docker images` output — see the size gap with your own eyes.
+2. Build `Dockerfile.singlestage` and compare `docker images` output see the size gap with your own eyes.
 3. Build `2-nodejs-nginx-example/Dockerfile` and confirm Node.js is absent from the final image.
 4. Build `Dockerfile.withtests`, targeting `tester` first, then the full final image.
 5. Intentionally break the build cache (reorder `COPY` instructions) and watch how many layers get invalidated on a rebuild.
