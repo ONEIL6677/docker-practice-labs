@@ -43,47 +43,6 @@ Stops the build pipeline early to verify code health without wasting time genera
 ```bash
 docker build --target tester .
 ```
-```
-
-***
-
-If you want to automate this process, I can show you how to connect this to a **GitHub Actions** script or an **automated shell script**. Which one would you prefer?
-
-
-# High-Performance Docker Artifact & Testing Pipeline
-
-This repository implements a production-hardened, multi-stage `Dockerfile` pipeline. It optimizes build speeds using layer caching, enforces code quality with dead-end testing gates, and minimizes attack vectors by shipping a non-root, ultra-lean final runtime image (~9MB).
-
----
-
-## The Optimized Pipeline Pipeline
-
-```text
-       ┌────────────────────────┐
-       │        1. BASE         │ ──► Copies go.mod ➔ Runs 'go mod download'
-       └───────────┬────────────┘     (Cached securely until modules change!)
-                   │
-         ┌─────────┴─────────┐
-         ▼                   ▼
-   ┌───────────┐       ┌───────────┐
-   │ 2. TESTER │       │3. BUILDER │ ──► Compiles fully static production
-   └───────────┘       └─────┬─────┘     binary with CGO completely disabled.
-   Runs 'go vet'             │
-   Runs 'go test'            ▼
-   (Halts build        ┌───────────┐
-    on failure)        │ 4. FINAL  │ ──► Drops Go SDK, runs as non-root
-                       └───────────┘     'appuser' on a bare Alpine base.
-```
-
----
-
-## Core Performance & Security Enhancements
-
-1. **Deterministic Layer Caching**: By processing `go.mod` and `go.sum` before copying source code, changing a single line of text in `main.go` will **not** trigger a re-download of your external libraries. Subsquent local builds drop from minutes to under 2 seconds.
-2. **Non-Root Execution (`appuser`)**: Standard containers run as `root` inside their namespace. This configuration strips away root privileges (`USER appuser`) in the final image, containing runtime exploits from breaching your host machine.
-3. **Static Binary Compilation**: Disabling CGO (`CGO_ENABLED=0`) packs all required execution dependencies directly inside the `myapp` binary file, removing any shared system library prerequisites.
-
----
 
 ## Production & CI/CD Command Guide
 
