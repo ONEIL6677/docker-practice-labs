@@ -44,7 +44,7 @@ Key points:
 
 This is the clearest way to *see* multi-stage builds working, because the size difference between stages is dramatic.
 
-**`practice/main.go`**
+**`/docker-practice-labs/lab-3-multistage-built/1-goapp/main.go`**
 ```go
 package main
 
@@ -55,7 +55,7 @@ func main() {
 }
 ```
 
-**`practice/Dockerfile`**
+**`/docker-practice-labs/lab-3-multistage-built/1-goapp/Dockerfile`**
 ```dockerfile
 # ==============================================================================
 # STAGE 1: The Build Environment
@@ -101,7 +101,7 @@ CMD ["./myapp"]
 
 **Build and run:**
 ```bash
-cd /docker-practice-labs/lab-3-multistage-built/1-goapp-example
+cd /docker-practice-labs/lab-3-multistage-built/1-goapp
 ```
 ```bash
 docker build -t multistage-demo .
@@ -145,9 +145,9 @@ You should see the single-stage image is **hundreds of megabytes** larger (it co
 
 ## 4. Practice Example Node.js build, static files served by nginx
 
-A very common real-world pattern: compile/bundle a frontend app, then ship only the static output in a tiny web server image — no Node.js in the final image at all.
+A very common real-world pattern: compile/bundle a frontend app, then ship only the static output in a tiny web server image no Node.js in the final image at all.
 
-**`2-nodejs-nginx-example/package.json`**
+**`2-nodejs-nginx/package.json`**
 ```json
 {
   "name": "demo-app",
@@ -158,26 +158,58 @@ A very common real-world pattern: compile/bundle a frontend app, then ship only 
 }
 ```
 
-**`2-nodejs-nginx-example/Dockerfile`**
+**`2-nodejs-nginx/Dockerfile`**
 ```dockerfile
-# ---------- Stage 1: build the static assets ----------
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY package.json .
-RUN npm install
-COPY . .
-RUN npm run build
-# Result: /app/dist/index.html
+# ==============================================================================
+# STAGE 1: Build the Static Assets
+# Purpose: Compiles source code into pure, optimized web assets (HTML/JS/CSS).
+# ==============================================================================
 
-# ---------- Stage 2: serve with nginx, no Node.js included ----------
-FROM nginx:alpine
+# Start with a modern, lightweight Node.js runtime environment
+FROM node:20-alpine AS builder
+
+# Create and switch into a dedicated workspace folder inside the builder image
+WORKDIR /app
+
+# Copy package manifests first to lock versions and maximize build cache efficiency
+COPY package.json package-lock.json* ./
+
+# Install exact dependency versions cleanly for automation (faster than npm install)
+RUN npm ci
+
+# Copy all remaining local source files into the build container
+COPY . .
+
+# Compile and minify the application assets for production delivery
+RUN npm run build
+# Result: Your optimized application files are generated inside '/app/dist'
+
+
+# ==============================================================================
+# STAGE 2: Serve with Nginx (No Node.js Included)
+# Purpose: Delivers the compiled static assets efficiently to user browsers.
+# ==============================================================================
+
+# Drop the bulky Node.js runtime entirely and boot a high-performance web server
+FROM nginx:1.25-alpine
+
+# Copy the compiled production assets from the builder stage into Nginx's public root
 COPY --from=builder /app/dist /usr/share/nginx/html
+
+# OPTIONAL: Uncomment the line below if you add a custom 'nginx.conf' to handle SPA routing
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Document that this container accepts incoming web traffic on HTTP port 80
 EXPOSE 80
+
+# Start the web server in the foreground so the container continues running
+CMD ["nginx", "-g", "daemon off;"]
+
 ```
 
 **Build and run:**
 ```bash
-cd /docker-practice-labs/lab-3-multistage-built/2-nodejs-nginx-example
+cd /docker-practice-labs/lab-3-multistage-built/2-nodejs-nginx
 ```
 ```bash
 docker build -t web-demo .
@@ -198,31 +230,79 @@ docker run --rm web-demo which node
 
 ## 5. Targeting a Specific Stage
 
-You don't always have to build the whole file. `--target` stops the build at a named stage — useful for debugging an intermediate stage, or for a dedicated "test" stage you don't want shipped to production.
+You don't always have to build the whole file. `--target` stops the build at a named stage useful for debugging an intermediate stage, or for a dedicated "test" stage you don't want shipped to production.
 
-**`practice/Dockerfile.withtests`**
+**`docker-practice-labs/lab-3-multistage-built/3-intermediate-test-stage/Dockerfile.withtest`**
 ```dockerfile
+# ==============================================================================
+# STAGE 1: Base Configuration
+# Purpose: Shared foundation to avoid repeating commands in subsequent stages.
+# ==============================================================================
+
+# Start with an official Go image on Alpine Linux and name this stage 'base'
 FROM golang:1.22-alpine AS base
+
+# Create and move into a dedicated workspace folder inside the container
 WORKDIR /src
+
+# Copy your local Go source code file into the current directory (/src)
 COPY main.go .
 
-# A stage just for running tests/checks — never shipped
+
+# ==============================================================================
+# STAGE 2: Automated Testing & Code Analysis
+# Purpose: A quality gate to validate code safety. This stage is NEVER shipped.
+# ==============================================================================
+
+# Inherit everything from the 'base' stage (includes Go, your folder, and main.go)
 FROM base AS tester
+
+# Run 'go vet', a built-in static analysis tool that inspects code for common bugs
+# If 'go vet' finds errors, the build crashes right here, protecting production.
 RUN go vet ./...
 
+
+# ==============================================================================
+# STAGE 3: Production Compilation
+# Purpose: Compiles the vetted source code into a standalone executable.
+# ==============================================================================
+
+# Inherit again from the clean 'base' stage to isolate the compilation process
 FROM base AS builder
+
+# Compile the Go application with environment variables optimized for Alpine containers:
+# - CGO_ENABLED=0: Disables dynamic C libraries to make the binary statically linked
+# - GOOS=linux: Explicitly targets Linux operating systems
+# - -o myapp: Names the outputted production binary file "myapp"
 RUN CGO_ENABLED=0 GOOS=linux go build -o myapp main.go
 
+
+# ==============================================================================
+# STAGE 4: Final, Minimal Runtime
+# Purpose: The ultra-lean, lightweight image that actually runs in production.
+# ==============================================================================
+
+# Start fresh with a bare-bones Alpine operating system (no Go tools or compilers)
 FROM alpine:3.20 AS final
+
+# Create a secure application directory inside this final container
 WORKDIR /app
+
+# Reach directly into the 'builder' stage, extraction only the compiled 'myapp' binary
+# All raw code, compilers, testing environments, and temp files are discarded
 COPY --from=builder /src/myapp .
+
+# Set the default startup command to run the application binary on container boot
 CMD ["./myapp"]
 ```
 
 ```bash
-# Build and stop at the "tester" stage only — won't produce the final runtime image
+cd docker-practice-labs/lab-3-multistage-built/3-intermediate-test-stage
+# Build and stop at the "tester" stage only won't produce the final runtime image
 docker build -f Dockerfile.withtests --target tester -t demo-tests .
+```
 
+```bash
 # Build the real final image (default target is the last stage, "final")
 docker build -f Dockerfile.withtests -t demo-final .
 ```
@@ -260,9 +340,9 @@ docker history <image>                         # inspect layers of the final ima
 
 ## 8. Suggested Practice Order
 
-1. Build `1-goapp-example/Dockerfile` and confirm the app runs.
+1. Build `1-goapp/Dockerfile` and confirm the app runs.
 2. Build `Dockerfile.singlestage` and compare `docker images` output see the size gap with your own eyes.
-3. Build `2-nodejs-nginx-example/Dockerfile` and confirm Node.js is absent from the final image.
+3. Build `2-nodejs-nginx/Dockerfile` and confirm Node.js is absent from the final image.
 4. Build `Dockerfile.withtests`, targeting `tester` first, then the full final image.
 5. Intentionally break the build cache (reorder `COPY` instructions) and watch how many layers get invalidated on a rebuild.
 

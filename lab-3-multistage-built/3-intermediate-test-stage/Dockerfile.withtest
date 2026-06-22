@@ -1,0 +1,60 @@
+# ==============================================================================
+# STAGE 1: Base Configuration
+# Purpose: Shared foundation to avoid repeating commands in subsequent stages.
+# ==============================================================================
+
+# Start with an official Go image on Alpine Linux and name this stage 'base'
+FROM golang:1.22-alpine AS base
+
+# Create and move into a dedicated workspace folder inside the container
+WORKDIR /src
+
+# Copy your local Go source code file into the current directory (/src)
+COPY main.go .
+
+
+# ==============================================================================
+# STAGE 2: Automated Testing & Code Analysis
+# Purpose: A quality gate to validate code safety. This stage is NEVER shipped.
+# ==============================================================================
+
+# Inherit everything from the 'base' stage (includes Go, your folder, and main.go)
+FROM base AS tester
+
+# Run 'go vet', a built-in static analysis tool that inspects code for common bugs
+# If 'go vet' finds errors, the build crashes right here, protecting production.
+RUN go vet ./...
+
+
+# ==============================================================================
+# STAGE 3: Production Compilation
+# Purpose: Compiles the vetted source code into a standalone executable.
+# ==============================================================================
+
+# Inherit again from the clean 'base' stage to isolate the compilation process
+FROM base AS builder
+
+# Compile the Go application with environment variables optimized for Alpine containers:
+# - CGO_ENABLED=0: Disables dynamic C libraries to make the binary statically linked
+# - GOOS=linux: Explicitly targets Linux operating systems
+# - -o myapp: Names the outputted production binary file "myapp"
+RUN CGO_ENABLED=0 GOOS=linux go build -o myapp main.go
+
+
+# ==============================================================================
+# STAGE 4: Final, Minimal Runtime
+# Purpose: The ultra-lean, lightweight image that actually runs in production.
+# ==============================================================================
+
+# Start fresh with a bare-bones Alpine operating system (no Go tools or compilers)
+FROM alpine:3.20 AS final
+
+# Create a secure application directory inside this final container
+WORKDIR /app
+
+# Reach directly into the 'builder' stage, extraction only the compiled 'myapp' binary
+# All raw code, compilers, testing environments, and temp files are discarded
+COPY --from=builder /src/myapp .
+
+# Set the default startup command to run the application binary on container boot
+CMD ["./myapp"]
