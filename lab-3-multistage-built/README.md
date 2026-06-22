@@ -220,19 +220,19 @@ docker run --rm -p 8080:80 web-demo
 
 Visit `http://localhost:8080` — you'll see the page, even though the final image never had Node.js installed.
 
+### Confirm Node isn't in the final image
 ```bash
-# Confirm Node isn't in the final image
 docker run --rm web-demo which node
+```
+```bash
 # Should return nothing / exit with an error — Node was only in the "builder" stage
 ```
-
----
 
 ## 5. Targeting a Specific Stage
 
 You don't always have to build the whole file. `--target` stops the build at a named stage useful for debugging an intermediate stage, or for a dedicated "test" stage you don't want shipped to production.
 
-**`docker-practice-labs/lab-3-multistage-built/3-intermediate-test-stage/Dockerfile.withtest`**
+**`docker-practice-labs/lab-3-multistage-built/3-intermediate-test-stage/Dockerfile`**
 ```dockerfile
 # ==============================================================================
 # STAGE 1: Base Configuration
@@ -295,19 +295,21 @@ COPY --from=builder /src/myapp .
 # Set the default startup command to run the application binary on container boot
 CMD ["./myapp"]
 ```
+## build and run
 
 ```bash
 cd docker-practice-labs/lab-3-multistage-built/3-intermediate-test-stage
-# Build and stop at the "tester" stage only won't produce the final runtime image
+```
+### Build and stop at the "tester" stage only won't produce the final runtime image
+```bash
 docker build --target tester -t demo-tests .
 ```
+### use this comand if your dockerfile is name differently -f followed by file name
 ```bash
-# use this comand if your dockerfile is name differently -f followed by file name
 docker build -f DockerfileName --target tester -t demo-tests . 
 ```
-
+### Build the real final image (default target is the last stage, "final")
 ```bash
-# Build the real final image (default target is the last stage, "final")
 docker build -f Dockerfile.withtests -t demo-final .
 ```
 
