@@ -10,7 +10,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy package manifests first to lock versions and maximize build cache efficiency
-COPY package.json package-lock.json* ./
+COPY package*.json ./
 
 # Install exact dependency versions cleanly for automation (faster than npm install)
 RUN npm ci

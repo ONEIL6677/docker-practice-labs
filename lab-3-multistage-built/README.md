@@ -172,7 +172,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy package manifests first to lock versions and maximize build cache efficiency
-COPY package.json package-lock.json* ./
+COPY package*.json ./
 
 # Install exact dependency versions cleanly for automation (faster than npm install)
 RUN npm ci
@@ -206,111 +206,102 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 
 ```
-
+Move to same folder as your project e.g `cd 2-nodejs-nginx`
 **Build and run:**
-```bash
-cd /docker-practice-labs/lab-3-multistage-built/2-nodejs-nginx
-```
+### Build image
 ```bash
 docker build -t web-demo .
 ```
 ```bash
 docker run --rm -p 8080:80 web-demo
 ```
-
 Visit `http://localhost:8080` — you'll see the page, even though the final image never had Node.js installed.
 
-### Confirm Node isn't in the final image
+### Confirm Node isn't in the final image container
+Run the command and immediately check the shell exit status. A result of 1 confirms Node is missing.
 ```bash
-docker run --rm web-demo which node
-```
-```bash
-# Should return nothing / exit with an error — Node was only in the "builder" stage
+docker run --rm web-demo which node; echo $?
 ```
 
 ## 5. Targeting a Specific Stage
-
+```bash
+cd 3-intermediate-test-stage
+```
 You don't always have to build the whole file. `--target` stops the build at a named stage useful for debugging an intermediate stage, or for a dedicated "test" stage you don't want shipped to production.
 
-**`docker-practice-labs/lab-3-multistage-built/3-intermediate-test-stage/Dockerfile`**
+### Why use it
+* **Fail-Safe Deployment**: If code formatting or logic tests fail, the `docker build` command crashes instantly. You can never accidentally ship a broken container.
+* **Lean Production Images**: Your final image leaves behind testing frameworks, compilers, and raw code files. It only keeps the compiled binary.
+* **Environment Consistency**: Tests run in the exact same clean, isolated container environment every time—eliminating "works on my machine" bugs.
+
+`3-intermediate-test-stage/Dockerfile`
 ```dockerfile
 # ==============================================================================
-# STAGE 1: Base Configuration
-# Purpose: Shared foundation to avoid repeating commands in subsequent stages.
+# STAGE 1: Base Environment
+# Purpose: Shared foundation for copying raw source code.
 # ==============================================================================
-
-# Start with an official Go image on Alpine Linux and name this stage 'base'
 FROM golang:1.22-alpine AS base
-
-# Create and move into a dedicated workspace folder inside the container
 WORKDIR /src
 
-# Copy your local Go source code file into the current directory (/src)
-COPY main.go .
+# Copy all your local source files directly into the image
+COPY . .
 
 
 # ==============================================================================
-# STAGE 2: Automated Testing & Code Analysis
-# Purpose: A quality gate to validate code safety. This stage is NEVER shipped.
+# STAGE 2: Automated Testing Gate
+# Purpose: Isolates lints and unit tests. If this fails, the build halts.
 # ==============================================================================
-
-# Inherit everything from the 'base' stage (includes Go, your folder, and main.go)
 FROM base AS tester
 
-# Run 'go vet', a built-in static analysis tool that inspects code for common bugs
-# If 'go vet' finds errors, the build crashes right here, protecting production.
+# Analyze code for structural bugs and common mistakes
 RUN go vet ./...
+
+# Run the complete unit test suite with verbose logging enabled
+RUN go test -v ./...
 
 
 # ==============================================================================
 # STAGE 3: Production Compilation
-# Purpose: Compiles the vetted source code into a standalone executable.
+# Purpose: Compiles a lightweight, standalone static binary.
 # ==============================================================================
-
-# Inherit again from the clean 'base' stage to isolate the compilation process
 FROM base AS builder
 
-# Compile the Go application with environment variables optimized for Alpine containers:
-# - CGO_ENABLED=0: Disables dynamic C libraries to make the binary statically linked
-# - GOOS=linux: Explicitly targets Linux operating systems
-# - -o myapp: Names the outputted production binary file "myapp"
-RUN CGO_ENABLED=0 GOOS=linux go build -o myapp main.go
+# Compile to a static binary:
+# - CGO_ENABLED=0 removes C bindings for maximum portability across Linux envs
+# - GOOS=linux targets the Linux kernel explicitly
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o myapp main.go
 
 
 # ==============================================================================
 # STAGE 4: Final, Minimal Runtime
-# Purpose: The ultra-lean, lightweight image that actually runs in production.
+# Purpose: Secure, ultra-lean image with zero build tools or source code.
 # ==============================================================================
-
-# Start fresh with a bare-bones Alpine operating system (no Go tools or compilers)
 FROM alpine:3.20 AS final
 
-# Create a secure application directory inside this final container
+# Run as a non-privileged system user for container security hardening
+RUN adduser -D -u 10001 appuser
+
 WORKDIR /app
 
-# Reach directly into the 'builder' stage, extraction only the compiled 'myapp' binary
-# All raw code, compilers, testing environments, and temp files are discarded
-COPY --from=builder /src/myapp .
+# Safely copy only the compiled static binary from the builder stage
+COPY --from=builder --chown=appuser:appuser /src/myapp .
 
-# Set the default startup command to run the application binary on container boot
+# Switch away from root access for runtime security
+USER appuser
+
+# Start the application
 CMD ["./myapp"]
+
 ```
 ## build and run
 
-```bash
-cd docker-practice-labs/lab-3-multistage-built/3-intermediate-test-stage
-```
 ### Build and stop at the "tester" stage only won't produce the final runtime image
 ```bash
 docker build --target tester -t demo-tests .
 ```
-### use this comand if your dockerfile is name differently -f followed by file name
-```bash
-docker build -f DockerfileName --target tester -t demo-tests . 
-```
 ### Build the real final image (default target is the last stage, "final")
 ```bash
-docker build -f Dockerfile.withtests -t demo-final .
+docker build -t demo-final .
 ```
 
 **Try it yourself:** add a deliberate bug to `main.go` (like an unused import) and run the `tester` target — it should fail the build before ever reaching the `builder` stage.
@@ -331,9 +322,6 @@ docker build --target <stage-name> -t x .      # build & stop at a specific stag
 docker images                                  # compare resulting image sizes
 docker history <image>                         # inspect layers of the final image
 ```
-
----
-
 ## 7. Common Pitfalls to Practice Spotting
 
 1. **Forgetting `--from=`** a bare `COPY` always copies from the build context (your host), not from another stage. Leaving off `--from=builder` silently copies the wrong files or fails.

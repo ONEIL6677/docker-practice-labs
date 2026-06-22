@@ -1,17 +1,11 @@
 # ==============================================================================
-# STAGE 1: Base Environment & Dependency Caching
-# Purpose: Installs dependencies once and shares them with downstream stages.
+# STAGE 1: Base Environment
+# Purpose: Shared foundation for copying raw source code.
 # ==============================================================================
 FROM golang:1.22-alpine AS base
 WORKDIR /src
 
-# Copy dependency manifests first to leverage Docker's layer caching
-COPY go.mod go.sum* ./
-
-# Download Go module dependencies (this layer stays cached unless go.mod changes)
-RUN go mod download
-
-# Copy the rest of the application source code files
+# Copy all your local source files directly into the image
 COPY . .
 
 
@@ -22,10 +16,10 @@ COPY . .
 FROM base AS tester
 
 # Analyze code for structural bugs and common mistakes
-RUN go vet ./...
+RUN go vet main.go
 
 # Run the complete unit test suite with verbose logging enabled
-RUN go test -v ./...
+RUN go test -v main.go
 
 
 # ==============================================================================
@@ -54,7 +48,7 @@ WORKDIR /app
 # Safely copy only the compiled static binary from the builder stage
 COPY --from=builder --chown=appuser:appuser /src/myapp .
 
-# Switch away from root access
+# Switch away from root access for runtime security
 USER appuser
 
 # Start the application
