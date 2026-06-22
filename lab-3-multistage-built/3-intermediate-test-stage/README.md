@@ -1,3 +1,55 @@
+# Docker Intermediate Testing
+
+This project uses a multi-stage `Dockerfile` with an **Intermediate Testing Gate**. This ensures only thoroughly vetted, bug-free code makes it to your production image.
+
+---
+
+## How It Works
+
+```text
+ ┌───────────────┐
+ │    1. BASE    │ ──► Copies your source files
+ └───────┬───────┘
+         │
+         ├──► [Branch A] ──► 2. TESTER  ──► Runs 'go vet' & unit tests
+         │                                  (🛑 Blocks build if tests fail!)
+         │
+         └──► [Branch B] ──► 3. BUILDER ──► Compiles production binary
+                                 │
+                                 ▼
+                             4. FINAL   ──► Drops build tools, copies binary
+```
+
+---
+
+## Why Use It?
+
+* **Fail-Safe Deployment**: If code formatting or logic tests fail, the `docker build` command crashes instantly. You can never accidentally ship a broken container.
+* **Lean Production Images**: Your final image leaves behind testing frameworks, compilers, and raw code files. It only keeps the compiled binary.
+* **Environment Consistency**: Tests run in the exact same clean, isolated container environment every time—eliminating "works on my machine" bugs.
+
+---
+
+## Useful Commands
+
+### 1. Build & Test Everything (Production Release)
+Runs all tests, builds the binary, and outputs the ultra-lean production image if successful:
+```bash
+docker build -t my-app:latest .
+```
+
+### 2. Run Only Tests (Fast CI/CD Check)
+Stops the build pipeline early to verify code health without wasting time generating a final image:
+```bash
+docker build --target tester .
+```
+```
+
+***
+
+If you want to automate this process, I can show you how to connect this to a **GitHub Actions** script or an **automated shell script**. Which one would you prefer?
+
+
 # High-Performance Docker Artifact & Testing Pipeline
 
 This repository implements a production-hardened, multi-stage `Dockerfile` pipeline. It optimizes build speeds using layer caching, enforces code quality with dead-end testing gates, and minimizes attack vectors by shipping a non-root, ultra-lean final runtime image (~9MB).
