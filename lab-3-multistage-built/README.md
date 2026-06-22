@@ -299,7 +299,11 @@ CMD ["./myapp"]
 ```bash
 cd docker-practice-labs/lab-3-multistage-built/3-intermediate-test-stage
 # Build and stop at the "tester" stage only won't produce the final runtime image
-docker build -f Dockerfile.withtests --target tester -t demo-tests .
+docker build --target tester -t demo-tests .
+```
+```bash
+# use this comand if your dockerfile is name differently -f followed by file name
+docker build -f DockerfileName --target tester -t demo-tests . 
 ```
 
 ```bash
@@ -337,13 +341,5 @@ docker history <image>                         # inspect layers of the final ima
 5. **Assuming the last stage runs by default in CI** if your pipeline uses `--target` for testing, make sure a separate, untargeted build step exists to produce the real shippable image.
 
 ---
-
-## 8. Suggested Practice Order
-
-1. Build `1-goapp/Dockerfile` and confirm the app runs.
-2. Build `Dockerfile.singlestage` and compare `docker images` output see the size gap with your own eyes.
-3. Build `2-nodejs-nginx/Dockerfile` and confirm Node.js is absent from the final image.
-4. Build `Dockerfile.withtests`, targeting `tester` first, then the full final image.
-5. Intentionally break the build cache (reorder `COPY` instructions) and watch how many layers get invalidated on a rebuild.
 
 Happy practicing!
