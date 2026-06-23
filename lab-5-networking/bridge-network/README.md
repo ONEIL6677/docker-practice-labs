@@ -2,10 +2,9 @@
 
 A **bridge network** is Docker's default network driver. It creates an isolated virtual network on a **single host**, allowing containers on the same bridge to communicate while staying isolated from others.
 
-> Use bridge networks for **single-host** deployments — local dev, small apps, or services that don't need to span multiple machines.
+> Use bridge networks for **single-host** deployments local dev, small apps, or services that don't need to span multiple machines.
 
 ---
-
 ## How It Works
 
 ```
@@ -76,7 +75,7 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
     networks:
-      - backend          # Isolated — NOT reachable from nginx directly
+      - backend          # Isolated NOT reachable from nginx directly
     secrets:
       - db_pass
 
@@ -101,7 +100,7 @@ secrets:
 | `frontend` | nginx, api         | Handle incoming HTTP/S traffic   |
 | `backend`  | api, db            | Database traffic — fully private |
 
-The database is **never reachable from nginx** — it only lives on `backend`. This is network segmentation at zero cost.
+The database is **never reachable from nginx** it only lives on `backend`. This is network segmentation at zero cost.
 
 ---
 
@@ -111,7 +110,7 @@ The database is **never reachable from nginx** — it only lives on `backend`. T
 # List all networks
 docker network ls
 
-# Inspect a network — see connected containers and their IPs
+# Inspect a network see connected containers and their IPs
 docker network inspect my-app-net
 
 # Connect a running container to a network
@@ -141,10 +140,10 @@ docker network create \
 
 ## Key Rules for Production
 
-- **Never use the default `bridge` network** — it doesn't support DNS by container name
-- **Always create named custom bridge networks** — enables service discovery by hostname
-- **Segment your services** — frontend bridge, backend bridge; don't put everything on one
-- **Don't publish ports you don't need** — only expose what faces the outside world
+- **Never use the default `bridge` network** it doesn't support DNS by container name
+- **Always create named custom bridge networks** enables service discovery by hostname
+- **Segment your services** frontend bridge, backend bridge; don't put everything on one
+- **Don't publish ports you don't need** only expose what faces the outside world
 - **Use Docker Secrets** for sensitive env vars, not plain `environment:` blocks
 
 ---
