@@ -144,36 +144,32 @@ secrets:
 
 ### Deploy the stack
 
+> Deploy (run from manager node)
 ```bash
-# Deploy (run from manager node)
 docker stack deploy -c docker-stack.yml prod
-
-# Check services are running
+```
+> Check services are running
+```bash
 docker stack services prod
-
-# Check where replicas landed across nodes
+```
+> Check where replicas landed across nodes
+```bash
 docker service ps prod_api
 ```
 
----
-
 ## Encryption
-
+> Enable encryption when creating the network
 ```bash
-# Enable encryption when creating the network
 docker network create \
   --driver overlay \
   --opt encrypted \            # Encrypts data-plane traffic with AES-GCM
   secure-net
-
-# Or in compose/stack files:
-# driver_opts:
-#   encrypted: "true"
 ```
+> Or in compose/stack files:
+>   driver_opts:
+>    encrypted: "true"
 
 > Without `encrypted`, overlay traffic between nodes is **unencrypted** inside the VXLAN tunnel. Always enable it in production.
-
----
 
 ## Useful Commands
 
@@ -182,7 +178,7 @@ docker network create \
 docker network ls
 ```
 
-> Inspect overlay — see which nodes and containers are connected
+> Inspect overlay see which nodes and containers are connected
 ```bash
 docker network inspect my-overlay-net
 ```
