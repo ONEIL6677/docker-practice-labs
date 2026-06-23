@@ -40,7 +40,7 @@ docker run -d --name db  --network my-app-net postgres:15
 
 ---
 
-## Production Example — Node API + PostgreSQL + Nginx
+## Production Example Node API + PostgreSQL + Nginx
 
 ```yaml
 # docker-compose.yml
@@ -98,7 +98,7 @@ secrets:
 | Bridge     | Who's on it        | Purpose                          |
 |------------|--------------------|----------------------------------|
 | `frontend` | nginx, api         | Handle incoming HTTP/S traffic   |
-| `backend`  | api, db            | Database traffic — fully private |
+| `backend`  | api, db            | Database traffic fully private |
 
 The database is **never reachable from nginx** it only lives on `backend`. This is network segmentation at zero cost.
 

@@ -177,39 +177,39 @@ docker network create \
 
 ## Useful Commands
 
+> List networks (overlay networks show scope: swarm)
 ```bash
-# List networks (overlay networks show scope: swarm)
 docker network ls
+```
 
-# Inspect overlay — see which nodes and containers are connected
+> Inspect overlay — see which nodes and containers are connected
+```bash
 docker network inspect my-overlay-net
-
-# Scale a service up (Swarm handles spreading replicas)
+```
+> Scale a service up (Swarm handles spreading replicas)
+```bash
 docker service scale prod_api=6
-
-# Rolling update with zero downtime
+```
+> Rolling update with zero downtime
+```bash
 docker service update --image my-api:v2 prod_api
-
-# Remove the whole stack
+```
+> Remove the whole stack
+```bash
 docker stack rm prod
 ```
 
----
-
 ## Label Nodes for Placement
-
+>Tag a node so stateful services (db, volumes) land on specific machines
 ```bash
-# Tag a node so stateful services (db, volumes) land on specific machines
 docker node update --label-add db=true node-hostname
-
-# Then in your stack file use placement constraints:
-# deploy:
-#   placement:
-#     constraints:
-#       - node.labels.db == true
 ```
 
----
+> Then in your stack file use placement constraints:
+> deploy:
+>   placement:
+>     constraints:
+>       - node.labels.db == true
 
 ## Key Rules for Production
 
@@ -226,8 +226,8 @@ docker node update --label-add db=true node-hostname
 
 | Need | Use |
 |------|-----|
-| Single host | ✅ Bridge |
-| Multiple hosts / Swarm cluster | ✅ Overlay |
-| Encrypted inter-node traffic | ✅ Overlay + `encrypted` |
-| Local dev / docker-compose | ✅ Bridge |
-| HA, rolling deploys, scaling | ✅ Overlay |
+| Single host | Bridge |
+| Multiple hosts / Swarm cluster | Overlay |
+| Encrypted inter-node traffic | Overlay + `encrypted` |
+| Local dev / docker-compose | Bridge |
+| HA, rolling deploys, scaling | Overlay |
